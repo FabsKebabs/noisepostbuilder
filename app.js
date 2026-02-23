@@ -1,90 +1,19 @@
-/* ── OAUTH2 (refresh token — never expires) ── */
-const _DBX_APP_KEY = 'bwedwhrr000d23m';
-const _DBX_APP_SEC = 'i91el890zf4ywga';
-const _DBX_REFRESH = '59_KffjEi_4AAAAAAAAAAZRvA-Pxe477k-Gf885jATnhU3iQxeTxZBLfHtsDcYA_';
-
-let _cachedToken = null;
-let _tokenExpiry = 0;
-
-async function getToken() {
-    if (_cachedToken && Date.now() < _tokenExpiry - 60000) return _cachedToken;
-    const body = new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: _DBX_REFRESH,
-        client_id: _DBX_APP_KEY,
-        client_secret: _DBX_APP_SEC,
-    });
-    const r = await fetch('https://api.dropboxapi.com/oauth2/token', { method: 'POST', body });
-    const d = await r.json();
-    if (!r.ok) throw new Error('Token refresh failed: ' + (d.error_description || d.error));
-    _cachedToken = d.access_token;
-    _tokenExpiry = Date.now() + (d.expires_in * 1000);
-    return _cachedToken;
-}
-
 /* ── CONSTANTS ── */
-const ROOT = '/Brands';
 const PAL = ['#FF3300', '#E8390E', '#FF6B35', '#ff9500', '#FFCC00', '#34c759', '#00a876', '#32ade6', '#5856d6', '#af52de', '#ff2d55', '#1c1c1e', '#0a84ff', '#30d158', '#e17055', '#fd9644'];
-const STORE = 'noise_v6';
+const STORE = 'noise_v8';
 
 /* ── STORAGE ── */
-// shape: { [path]: { joined, postIdx, batches:[{name,path}], color } }
+// shape: { [brandName]: { joined, postIdx, batches:[{name,files:[]}], color } }
 const load = () => { try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { return {}; } };
 const save = d => localStorage.setItem(STORE, JSON.stringify(d));
 
-let allBrands = [];
+let allBrands = []; // [{ name, batches:[{name,files:[]}], color }]
 
-/* ── DROPBOX API ── */
-async function dbxList(path) {
-    const r = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + await getToken(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: path === '/' ? '' : path, recursive: false })
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error_summary || 'Dropbox error');
-
-    let entries = d.entries || [];
-    let cursor = d.cursor, has_more = d.has_more;
-    while (has_more) {
-        const r2 = await fetch('https://api.dropboxapi.com/2/files/list_folder/continue', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + await getToken(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cursor })
-        });
-        const d2 = await r2.json();
-        entries = [...entries, ...(d2.entries || [])];
-        cursor = d2.cursor;
-        has_more = d2.has_more;
-    }
-    return entries;
-}
-
-async function dbxGetShareLink(path) {
-    const tok = await getToken();
-    const r = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path, settings: { requested_visibility: { '.tag': 'public' } } })
-    });
-    if (r.ok) { const d = await r.json(); return d.url; }
-
-    const r2 = await fetch('https://api.dropboxapi.com/2/sharing/list_shared_links', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path, direct_only: true })
-    });
-    const d2 = await r2.json();
-    if (d2.links && d2.links.length > 0) return d2.links[0].url;
-    throw new Error('Could not get share link');
-}
-
-/* ── LOAD BRANDS ── */
+/* ── LOAD MANIFEST ── */
 async function loadBrands() {
     const grid = document.getElementById('brands-grid');
     const btn = document.getElementById('refresh-btn');
 
-    // Skeleton placeholders
     grid.innerHTML = Array(4).fill(0).map(() => `
         <div class="skel-card">
             <div class="skel skel-top"></div>
@@ -97,25 +26,26 @@ async function loadBrands() {
     btn.innerHTML = '<span class="spin spin-dark"></span>';
 
     try {
-        const entries = await dbxList(ROOT);
-        const folders = entries
-            .filter(e => e['.tag'] === 'folder')
-            .sort((a, b) => a.name.localeCompare(b.name));
+        const res = await fetch('brands.json?_=' + Date.now());
+        if (!res.ok) throw new Error('brands.json not found (' + res.status + ')');
+        const manifest = await res.json();
 
         const data = load();
-        allBrands = folders.map((f, i) => {
-            if (!data[f.path_lower]) {
-                data[f.path_lower] = { joined: false, postIdx: 0, batches: [], color: PAL[i % PAL.length] };
-            } else if (!data[f.path_lower].color) {
-                data[f.path_lower].color = PAL[i % PAL.length];
+        allBrands = (manifest.brands || []).map((b, i) => {
+            if (!data[b.name]) {
+                data[b.name] = { joined: false, postIdx: 0, batches: b.batches, color: PAL[i % PAL.length] };
+            } else {
+                // Always sync batches from manifest so new batches appear
+                data[b.name].batches = b.batches;
+                if (!data[b.name].color) data[b.name].color = PAL[i % PAL.length];
             }
-            return { name: f.name, path: f.path_lower, color: data[f.path_lower].color };
+            return { name: b.name, batches: b.batches, color: data[b.name].color };
         });
         save(data);
         rBrands();
         updateHdr();
     } catch (e) {
-        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="ei">❌</span><p>Failed to load from Dropbox.<br><small>${e.message}</small></p></div>`;
+        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="ei">❌</span><p>Failed to load brands.<br><small>${e.message}</small></p></div>`;
     } finally {
         btn.disabled = false;
         btn.innerHTML = '🔄 Refresh';
@@ -125,106 +55,110 @@ async function loadBrands() {
 async function refreshBrands() { await loadBrands(); }
 
 /* ── JOIN ── */
-async function joinBrand(path, btn) {
-    const brand = allBrands.find(b => b.path === path);
+function joinBrand(brandName, btn) {
+    const brand = allBrands.find(b => b.name === brandName);
     if (!brand) return;
 
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<span class="spin"></span>';
-    btn.disabled = true;
+    const data = load();
+    if (!data[brandName]) data[brandName] = { color: brand.color };
+    data[brandName].joined = true;
+    data[brandName].name = brand.name;
+    data[brandName].postIdx = 0;
+    data[brandName].batches = brand.batches;
+    save(data);
 
-    try {
-        const entries = await dbxList(path);
-        const batches = entries
-            .filter(e => e['.tag'] === 'folder')
-            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
-            .map(f => ({ name: f.name, path: f.path_lower }));
-
-        const data = load();
-        if (!data[path]) data[path] = { color: brand.color };
-        data[path].joined = true;
-        data[path].name = brand.name;
-        data[path].postIdx = 0;
-        data[path].batches = batches;
-        save(data);
-
-        rBrands(); rPosts(); updateHdr();
-        toast(`✅ Joined ${brand.name}! ${batches.length} batch${batches.length !== 1 ? 'es' : ''} ready.`, 'gr');
-    } catch (e) {
-        toast('Error: ' + e.message, 'rd');
-        btn.innerHTML = orig;
-        btn.disabled = false;
-    }
+    rBrands(); rPosts(); updateHdr();
+    const count = brand.batches.length;
+    toast(`✅ Joined ${brand.name}! ${count} batch${count !== 1 ? 'es' : ''} ready.`, 'gr');
 }
 
 /* ── LEAVE ── */
-function confirmLeave(path, name) {
-    document.getElementById('c-title').textContent = 'Leave ' + name + '?';
+function confirmLeave(brandName, displayName) {
+    document.getElementById('c-title').textContent = 'Leave ' + displayName + '?';
     document.getElementById('c-msg').textContent = 'You can always rejoin later.';
     document.getElementById('c-ok').onclick = () => {
         const data = load();
-        if (data[path]) data[path].joined = false;
+        if (data[brandName]) data[brandName].joined = false;
         save(data);
         closeCon(); rBrands(); rPosts(); updateHdr();
-        toast('👋 Left ' + name, 'rd');
+        toast('👋 Left ' + displayName, 'rd');
     };
     document.getElementById('c-ov').classList.add('open');
 }
-
 function closeCon() { document.getElementById('c-ov').classList.remove('open'); }
 
-/* ── GENERATE (random batch with slot-machine animation) ── */
-async function nextBatch(path, btn) {
+/* ── GENERATE (slot-machine) ── */
+async function nextBatch(brandName, btn) {
     const data = load();
-    if (!data[path]) return;
-    const batches = data[path].batches || [];
+    if (!data[brandName]) return;
+    const batches = data[brandName].batches || [];
     if (batches.length < 2) return;
 
     const orig = btn.innerHTML;
     btn.disabled = true;
 
-    // Slot-machine: flash through random names quickly
     const names = batches.map(b => b.name);
-    let flashes = 0;
-    const total = 14; // number of flashes
+    const total = 14;
     const delay = ms => new Promise(res => setTimeout(res, ms));
 
     for (let i = 0; i < total; i++) {
         const rnd = names[Math.floor(Math.random() * names.length)];
-        // Speed: starts fast, slows down toward end
         const wait = 60 + Math.floor((i / total) ** 2 * 260);
         btn.innerHTML = `<span class="spin"></span> ${rnd}`;
         await delay(wait);
     }
 
-    // Pick a final random index (different from current when possible)
-    const cur = data[path].postIdx || 0;
+    const cur = data[brandName].postIdx || 0;
     let pick = Math.floor(Math.random() * batches.length);
     if (batches.length > 1 && pick === cur) pick = (pick + 1) % batches.length;
 
-    data[path].postIdx = pick;
+    data[brandName].postIdx = pick;
     save(data);
     rPosts();
+    btn.innerHTML = orig;
+    btn.disabled = false;
     toast('✨ Generated!', 'gr');
 }
 
-/* ── DOWNLOAD ── */
-async function downloadBatch(path, btn) {
+/* ── DOWNLOAD (zip files from Brands/ folder via fetch) ── */
+async function downloadBatch(brandName, btn) {
     const data = load();
-    const entry = data[path];
+    const entry = data[brandName];
     if (!entry) return;
     const batch = (entry.batches || [])[entry.postIdx || 0];
     if (!batch) { toast('No batch found', 'rd'); return; }
 
+    const files = batch.files || [];
+    if (files.length === 0) { toast('This batch has no files yet.', 'rd'); return; }
+
     const orig = btn.innerHTML;
-    btn.innerHTML = '<span class="spin"></span> Getting link…';
+    btn.innerHTML = '<span class="spin"></span> Zipping…';
     btn.disabled = true;
 
     try {
-        const url = await dbxGetShareLink(batch.path);
-        const dlUrl = url.replace(/[?&]dl=\d/, '').replace(/\?$/, '') + (url.includes('?') ? '&' : '?') + 'dl=1';
-        window.location.href = dlUrl;
-        toast('📥 Download starting…', 'gr');
+        const zip = new JSZip();
+        const basePath = `Brands/${brandName}/${batch.name}/`;
+
+        await Promise.all(files.map(async fileName => {
+            const url = basePath + encodeURIComponent(fileName);
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`Could not fetch ${fileName}`);
+            const blob = await resp.blob();
+            zip.file(fileName, blob);
+        }));
+
+        const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${brandName} – ${batch.name}.zip`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+        toast(`📥 Downloading ${files.length} file${files.length !== 1 ? 's' : ''}…`, 'gr');
         btn.innerHTML = 'Downloading…';
         setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 4000);
     } catch (e) {
@@ -237,15 +171,9 @@ async function downloadBatch(path, btn) {
 /* ── RENDER: MY POSTS ── */
 function rPosts() {
     const data = load();
-    // Read joined brands directly from localStorage so this works on cold page load
-    // (before loadBrands() has finished populating allBrands)
     const joined = Object.entries(data)
         .filter(([, d]) => d.joined)
-        .map(([path, d]) => ({
-            path,
-            name: d.name || path.split('/').pop(),
-            color: d.color || '#FF3300'
-        }));
+        .map(([key, d]) => ({ key, name: d.name || key, color: d.color || '#FF3300' }));
     document.getElementById('jchip').textContent = joined.length + ' joined';
 
     const el = document.getElementById('posts-list');
@@ -255,12 +183,11 @@ function rPosts() {
     }
 
     el.innerHTML = joined.map(b => {
-        const d = data[b.path] || {};
+        const d = data[b.key] || {};
         const batches = d.batches || [];
         const idx = d.postIdx || 0;
         const total = batches.length;
         const batch = total > 0 ? batches[idx] : null;
-        const pct = total > 0 ? Math.round(((idx + 1) / total) * 100) : 0;
         const init = ini(b.name);
 
         return `<div class="pc anim">
@@ -271,7 +198,6 @@ function rPosts() {
     </div>
   </div>
   <div class="pc-body">
-
     ${batch
                 ? `<div class="ready-box">
            <div class="ready-info">
@@ -281,12 +207,12 @@ function rPosts() {
                <div class="ready-sub">Your content has been generated</div>
              </div>
            </div>
-           <button class="btn btn-red btn-sm" onclick="downloadBatch('${b.path}',this)">⬇ Download</button>
+           <button class="btn btn-red btn-sm" onclick="downloadBatch('${esc(b.key)}',this)">⬇ Download</button>
          </div>`
                 : `<div class="bi-box"><div class="bt" style="color:var(--mu);text-align:center">⚠️ No batches found.</div></div>`}
     <div class="pc-act">
-      ${total > 1 ? `<button class="btn btn-rr btn-sm" onclick="nextBatch('${b.path}',this)">🎲 Generate Post</button>` : ''}
-      <button class="btn btn-rr btn-sm" onclick="confirmLeave('${b.path}','${esc(b.name)}')">👋 Leave</button>
+      ${total > 1 ? `<button class="btn btn-rr btn-sm" onclick="nextBatch('${esc(b.key)}',this)">🎲 Generate Post</button>` : ''}
+      <button class="btn btn-rr btn-sm" onclick="confirmLeave('${esc(b.key)}','${esc(b.name)}')">👋 Leave</button>
     </div>
   </div>
 </div>`;
@@ -300,14 +226,13 @@ function rBrands() {
     document.getElementById('hb').textContent = allBrands.length;
 
     if (allBrands.length === 0) {
-        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="ei">🏷️</span><p>No brands found in /Brands folder.</p></div>`;
+        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="ei">🏷️</span><p>No brands found in brands.json.</p></div>`;
         return;
     }
 
     grid.innerHTML = allBrands.map(b => {
-        const d = data[b.path] || {};
+        const d = data[b.name] || {};
         const joined = !!d.joined;
-        const total = (d.batches || []).length;
         const init = ini(b.name);
 
         return `<div class="bc anim">
@@ -317,11 +242,10 @@ function rBrands() {
   </div>
   <div class="bc-info">
     <div class="bc-name" title="${esc(b.name)}">${esc(b.name)}</div>
-
     <div class="bc-btns">
       ${joined
-                ? `<button class="btn btn-rr btn-sm" onclick="confirmLeave('${b.path}','${esc(b.name)}')">👋 Leave</button>`
-                : `<button class="btn btn-gr btn-sm" onclick="joinBrand('${b.path}',this)">Join</button>`}
+                ? `<button class="btn btn-rr btn-sm" onclick="confirmLeave('${esc(b.name)}','${esc(b.name)}')">👋 Leave</button>`
+                : `<button class="btn btn-gr btn-sm" onclick="joinBrand('${esc(b.name)}',this)">Join</button>`}
     </div>
   </div>
 </div>`;
@@ -335,11 +259,9 @@ function updateHdr() {
     document.getElementById('hj').textContent = joined;
     document.getElementById('hb').textContent = allBrands.length;
 }
-
 function esc(s) {
     return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-
 function ini(name) {
     const w = String(name).trim().split(/\s+/);
     return w.length === 1 ? w[0].slice(0, 2).toUpperCase() : w[0][0].toUpperCase() + w[1][0].toUpperCase();
@@ -366,7 +288,7 @@ function sw(name) {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCon(); });
 
 /* ── BOOT ── */
-(function () {
+(async function () {
     rPosts();
-    loadBrands();
+    await loadBrands();
 })();

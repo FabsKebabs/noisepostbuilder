@@ -1,28 +1,26 @@
-/* ── TOKEN (split to avoid casual inspection) ── */
-const _a = 'sl.u.AGUMDzaVte_Kp76yf-EAaqur6FCmNyMAUQ8Y1z8_nKhZGyZnsux2ku7YM4Jr';
-const _b = 'xDfTkFt67BV8CRCHKXzMvwqMuqaXs0cGzddMYyWw-nAPu9nWzN1h9hcbNLeDO0YF';
-const _c = 'wdujUAzWJN941iLgulYyd_F6Z_dpQP6FdMrW3rlOrvNhVgD243DwK0C632rLd5UD7';
-const _d = 'uu0Wj4hIVd0ob29Zmi9JWN8RbkqHYahELERJTkglkRAMT6mrRZhRrRthf5uInQHpP';
-const _e = 'JaVSkTBq_nnG1Ks-Kb67GDOdtdI2z2Sx41uwYFwLXAGkbYa4mQPv3KntuOYYOfrb0';
-const _f = 'RF_-kx4eG3SGo9BlnjNwwCfBgulxS36iJuwHtM-XnvHN-R36JjCArdXjjcHYkcXez';
-const _g = 'UbbVrPzd-3-MzHbmX8QUH9te4MEEWOeh_8zzpSgS2M4v0isgQI7rLXGctd6Wwfsc';
-const _h = 'ArTYVCqq3ebawvsMR5j3TSZM7Ofzc6hkmzzIKe0u2jTB2PkKPTWeArk3zXxWHtU7';
-const _i = 'S2uIj_uoQWg9RQBcXS7zSmh1H1-YR9SAafaENndlf5MPKVTSM92fZAE8L8ap5p3ic';
-const _j = 'h8zqZ6PHa4533MECikSBhMfSC-EP9-l7NHvJi9uSgZiXp-bO6hCdheWpTEUeI3sb';
-const _k = 'uQODR4bsoqhRmf_d7unxJLNhvfGukU8a3kHnZnXS9nHmLinpynXtVjDORIpEA96Z';
-const _l = 'ZqnjnKgvoRY0nx14KJGPTFJNLiNGHGComeBAcVyekzl534kQw2EElG3PzHG2kKw8l';
-const _m = 'f18JarhmwUUNfm6jXZutEdgJ_-f3y3JzO5sjvR98XC_wAHC2HU8AyimtxFo2HMXU';
-const _n = 'mE7Gk1uXcIE2_R24jkVkHmJIF-tcbIjyY77JlqF25e9BuUD55IdOISf2Ft7dvY77d';
-const _o = '_F0IkyzMQ1n4QPwyMtKMGKXl7W01FwsE42LAMcXAgGbipa03oNLrKnq710NXdyxwaj';
-const _p = 'wxuiGAJm8gErqXtoBV2A9RqmhWUURnU2q0Qn8em_Xwl-DCJVNJOABFKIlYlZLmvw';
-const _q = 'nQtNZTNrpqiNYb6LrGdD7a2MugjtP2KaSlDwVAzj-wCR4K2zQg_7LBz3g7kW2-bj';
-const _r = 'JJrxorlctTGhhOdLOdKRophgh8oMzTzUlSH2N_AiVxV9BiZZZXDYaimygX45JOYQ4';
-const _s = 'GBGh5PCRoY2_4WM6kB06n7ar30mHBX3CNxOWQDihOnqmYhj8G9-o-Q0v_H9YAPqjJ';
-const _t2 = 'mIFk-SVJ1AT5THEFPhoZM5zOtHqLBxWbVQ0ZZzFAfQb8ZGkOa26NVLVi99tcfhRVJ';
-const _u = 'rqJfxgnys8NA0ek-Aa_qbU2hfS5HyHOZ-io8ga6eG2GpjZ4Km5nLXHgh4I4adTPpz';
-const _v = 'aSCUguwxaypbc7FjFhKy1e4oECQvqOhggnDgpIU2FavsUZlvUi3WyhF-KK6yE55jU';
-const _w = '0VQGYYC7FC55UG';
-const getToken = () => [_a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t2, _u, _v, _w].join('');
+/* ── OAUTH2 (refresh token — never expires) ── */
+const _DBX_APP_KEY = 'bwedwhrr000d23m';
+const _DBX_APP_SEC = 'i91el890zf4ywga';
+const _DBX_REFRESH = '59_KffjEi_4AAAAAAAAAAZRvA-Pxe477k-Gf885jATnhU3iQxeTxZBLfHtsDcYA_';
+
+let _cachedToken = null;
+let _tokenExpiry = 0;
+
+async function getToken() {
+    if (_cachedToken && Date.now() < _tokenExpiry - 60000) return _cachedToken;
+    const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: _DBX_REFRESH,
+        client_id: _DBX_APP_KEY,
+        client_secret: _DBX_APP_SEC,
+    });
+    const r = await fetch('https://api.dropboxapi.com/oauth2/token', { method: 'POST', body });
+    const d = await r.json();
+    if (!r.ok) throw new Error('Token refresh failed: ' + (d.error_description || d.error));
+    _cachedToken = d.access_token;
+    _tokenExpiry = Date.now() + (d.expires_in * 1000);
+    return _cachedToken;
+}
 
 /* ── CONSTANTS ── */
 const ROOT = '/Brands';
@@ -40,7 +38,7 @@ let allBrands = [];
 async function dbxList(path) {
     const r = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+        headers: { 'Authorization': 'Bearer ' + await getToken(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: path === '/' ? '' : path, recursive: false })
     });
     const d = await r.json();
@@ -51,7 +49,7 @@ async function dbxList(path) {
     while (has_more) {
         const r2 = await fetch('https://api.dropboxapi.com/2/files/list_folder/continue', {
             method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + await getToken(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ cursor })
         });
         const d2 = await r2.json();
@@ -63,7 +61,7 @@ async function dbxList(path) {
 }
 
 async function dbxGetShareLink(path) {
-    const tok = getToken();
+    const tok = await getToken();
     const r = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },

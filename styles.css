@@ -821,3 +821,37 @@ header {
     width: calc(100% - 16px);
     justify-content: center;
 }
+
+/* ── DESCRIPTION / CAPTION BOX ── */
+.desc-box {
+    background: var(--s2);
+    border: 1.5px solid var(--b);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.desc-label {
+    font-size: .71rem;
+    font-weight: 700;
+    color: var(--mu);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.desc-text {
+    font-size: .84rem;
+    color: var(--t);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    user-select: text;
+}
+
+.desc-copy {
+    align-self: flex-start;
+    transition: color .2s ease;
+}

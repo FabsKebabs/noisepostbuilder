@@ -131,22 +131,19 @@ function openGallery(brandName) {
     const files = batch.files || [];
     if (files.length === 0) { toast('This batch has no images yet.', 'rd'); return; }
 
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const basePath = `Brands/${encodeURIComponent(brandName)}/${encodeURIComponent(batch.name)}/`;
 
     const ov = document.getElementById('gallery-ov');
     const grid = document.getElementById('gallery-grid');
     const hint = document.getElementById('gallery-hint');
 
-    hint.textContent = isMobile
-        ? '👆 Long-press each photo → Save to Photos'
-        : '💾 Click the download button under each photo';
+    hint.textContent = `${batch.name}  ·  ${files.length} photo${files.length !== 1 ? 's' : ''}`;
 
-    grid.innerHTML = files.map((f, i) => {
+    grid.innerHTML = files.map(f => {
         const src = basePath + encodeURIComponent(f);
         return `<div class="gal-item">
   <img src="${src}" alt="${esc(f)}" loading="lazy" />
-  ${!isMobile ? `<button class="btn btn-red btn-sm gal-dl" onclick="dlSingle('${esc(src)}','${esc(f)}',this)">⬇ Save</button>` : ''}
+  <button class="btn btn-red btn-sm gal-dl" onclick="dlSingle('${esc(src)}','${esc(f)}',this)">⬇ Save</button>
 </div>`;
     }).join('');
 
@@ -201,6 +198,7 @@ function rPosts() {
         const total = batches.length;
         const batch = total > 0 ? batches[idx] : null;
         const fileCount = batch ? (batch.files || []).length : 0;
+        const desc = batch ? (batch.description || '') : '';
         const init = ini(b.name);
 
         return `<div class="pc anim">
@@ -221,10 +219,15 @@ function rPosts() {
              </div>
            </div>
            <button class="btn btn-red btn-sm" onclick="openGallery('${esc(b.key)}')">🖼 View Photos</button>
-         </div>`
+         </div>
+         ${desc ? `<div class="desc-box">
+           <div class="desc-label">📋 Caption</div>
+           <div class="desc-text">${esc(desc)}</div>
+           <button class="btn btn-ic btn-sm desc-copy" onclick="copyDesc(this,'${esc(desc)}')">Copy</button>
+         </div>` : ''}`
                 : `<div class="bi-box"><div class="bt" style="color:var(--mu);text-align:center">⚠️ No batches found.</div></div>`}
     <div class="pc-act">
-      ${total > 1 ? `<button class="btn btn-rr btn-sm" onclick="nextBatch('${esc(b.key)}',this)">🎲 Generate Post</button>` : ''}
+      <button class="btn btn-rr btn-sm" onclick="nextBatch('${esc(b.key)}',this)">🎲 Generate Post</button>
       <button class="btn btn-rr btn-sm" onclick="confirmLeave('${esc(b.key)}','${esc(b.name)}')">👋 Leave</button>
     </div>
   </div>
@@ -274,6 +277,20 @@ function updateHdr() {
 }
 function esc(s) {
     return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function copyDesc(btn, text) {
+    // Unescape HTML entities before copying
+    const raw = text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+    try {
+        await navigator.clipboard.writeText(raw);
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.style.color = 'var(--gr)';
+        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+    } catch (e) {
+        toast('Could not copy — try manually selecting text.', 'rd');
+    }
 }
 function ini(name) {
     const w = String(name).trim().split(/\s+/);

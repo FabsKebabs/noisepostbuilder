@@ -70,6 +70,20 @@
                                            "description":  "Find the perfect calorie tracker for your health journey! 👀 Macro AI takes the crown! Want to know why? Keep watching! #fitnessjourney #MacroAI #usemacroai #macroai_kalorienzahler_app_appstore"
                                        }
                                    ]
+                   },
+                   {
+                       "name":  "Nala",
+                       "batches":  [
+                                       {
+                                           "name":  "Post Batch 1",
+                                           "files":  [
+                                                         "1.webp",
+                                                         "2.webp",
+                                                         "3.webp"
+                                                     ],
+                                           "description":  ""
+                                       }
+                                   ]
                    }
                ]
 }

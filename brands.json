@@ -1,89 +1,145 @@
-{
-    "brands": [
-        {
-            "name": "Macroai",
-            "batches": [
-                {
-                    "name": "Post Batch 1",
-                    "files": [
-                        "1.jpg",
-                        "2.jpg",
-                        "3.jpg",
-                        "4.jpg",
-                        "5.jpg"
-                    ],
-                    "description": "Macro Al is my top pick!!! #MacroAl #fitnessjourney #usemacroai #macroai_kalorienzahler_app_appstore"
-                },
-                {
-                    "name": "Post Batch 2",
-                    "files": [
-                        "(1).jpg",
-                        "(2).jpg",
-                        "(3).jpg",
-                        "(4).jpg",
-                        "(5).jpg"
-                    ],
-                    "description": "Ever tried calorie tracking apps? Here\u0027s my take on the best ones! Spoiler: Macro AI is a game-changer! What\u0027s your favorite? #MacroAI #calorietracking #usemacroai #macroai_kalorienzahler_app_appstore"
-                },
-                {
-                    "name": "Post Batch 3",
-                    "files": [
-                        "(1).jpg",
-                        "(2).jpg",
-                        "(3).jpg",
-                        "(4).jpg",
-                        "(5).jpg"
-                    ],
-                    "description": "I rate calorie tracking apps to help you pick the right one! Macro AI stands out with its user-friendly design and smart features! #fitnessjourney #MacroAI #usemacroai #macroai_kalorienzahler_app_appstore"
-                },
-                {
-                    "name": "Post Batch 4",
-                    "files": [
-                        "(1).jpg",
-                        "(2).jpg",
-                        "(3).jpg",
-                        "(4).jpg",
-                        "(5).jpg"
-                    ],
-                    "description": "Macro Al is my top pick!!! #MacroAl #fitnessjourney #usemacroai #macroai_kalorienzahler_app_appstore"
-                },
-                {
-                    "name": "Post Batch 5",
-                    "files": [
-                        "1.jpg",
-                        "2.jpg",
-                        "3.jpg",
-                        "4.jpg",
-                        "5.jpg"
-                    ],
-                    "description": "Ever tried calorie tracking apps? Here\u0027s my take on the best ones! Spoiler: Macro AI is a game-changer! What\u0027s your favorite? #calorietracking #MacroAI #usemacroai #macroai_kalorienzahler_app_appstore"
-                },
-                {
-                    "name": "Post Batch 6",
-                    "files": [
-                        "1.jpg",
-                        "2.jpg",
-                        "3.jpg",
-                        "4.jpg",
-                        "5.jpg"
-                    ],
-                    "description": "Find the perfect calorie tracker for your health journey! 👀 Macro AI takes the crown! Want to know why? Keep watching! #fitnessjourney #MacroAI #usemacroai #macroai_kalorienzahler_app_appstore"
-                }
-            ]
-        },
-        {
-            "name": "Nala",
-            "batches": [
-                {
-                    "name": "Post Batch 1",
-                    "files": [
-                        "1.webp",
-                        "2.webp",
-                        "3.webp"
-                    ],
-                    "description": "NALA open… i’m clocked in #money #international #nala"
-                }
-            ]
-        }
-    ]
+﻿{
+    "brands":  [
+                   {
+                       "name":  "Macroai",
+                       "batches":  [
+                                       {
+                                           "name":  "Post Batch 1",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg",
+                                                         "3.jpg",
+                                                         "4.jpg",
+                                                         "5.jpg"
+                                                     ],
+                                           "description":  "Macro Al is my top pick!!! #MacroAl #fitnessjourney #usemacroai #macroai_kalorienzahler_app_appstore"
+                                       },
+                                       {
+                                           "name":  "Post Batch 2",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg",
+                                                         "3.jpg",
+                                                         "4.jpg",
+                                                         "5.jpg"
+                                                     ],
+                                           "description":  "Ever tried calorie tracking apps? Here\u0027s my take on the best ones! Spoiler: Macro AI is a game-changer! What\u0027s your favorite? #MacroAI #calorietracking #usemacroai #macroai_kalorienzahler_app_appstore"
+                                       },
+                                       {
+                                           "name":  "Post Batch 3",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg",
+                                                         "3.jpg",
+                                                         "4.jpg",
+                                                         "5.jpg"
+                                                     ],
+                                           "description":  "I rate calorie tracking apps to help you pick the right one! Macro AI stands out with its user-friendly design and smart features! #fitnessjourney #MacroAI #usemacroai #macroai_kalorienzahler_app_appstore"
+                                       },
+                                       {
+                                           "name":  "Post Batch 4",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg",
+                                                         "3.jpg",
+                                                         "4.jpg",
+                                                         "5.jpg"
+                                                     ],
+                                           "description":  "Macro Al is my top pick!!! #MacroAl #fitnessjourney #usemacroai #macroai_kalorienzahler_app_appstore"
+                                       },
+                                       {
+                                           "name":  "Post Batch 5",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg",
+                                                         "3.jpg",
+                                                         "4.jpg",
+                                                         "5.jpg"
+                                                     ],
+                                           "description":  "Ever tried calorie tracking apps? Here\u0027s my take on the best ones! Spoiler: Macro AI is a game-changer! What\u0027s your favorite? #calorietracking #MacroAI #usemacroai #macroai_kalorienzahler_app_appstore"
+                                       },
+                                       {
+                                           "name":  "Post Batch 6",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg",
+                                                         "3.jpg",
+                                                         "4.jpg",
+                                                         "5.jpg"
+                                                     ],
+                                           "description":  "Find the perfect calorie tracker for your health journey! 👀 Macro AI takes the crown! Want to know why? Keep watching! #fitnessjourney #MacroAI #usemacroai #macroai_kalorienzahler_app_appstore"
+                                       }
+                                   ]
+                   },
+                   {
+                       "name":  "Nala",
+                       "batches":  [
+                                       {
+                                           "name":  "Post Batch 1",
+                                           "files":  [
+                                                         "1.webp",
+                                                         "2.webp",
+                                                         "3.webp"
+                                                     ],
+                                           "description":  ""
+                                       },
+                                       {
+                                           "name":  "Post Batch 2",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg",
+                                                         "3.jpg",
+                                                         "4.jpg",
+                                                         "5.jpg"
+                                                     ],
+                                           "description":  "NALA said don’t worry, they’ll eat for you 🥺 #ghanafood #moneytransfer #nala"
+                                       },
+                                       {
+                                           "name":  "Post Batch 3",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2 (1).jpg",
+                                                         "3.jpg",
+                                                         "4.jpg"
+                                                     ],
+                                           "description":  "Why are you being cheap? NALA is the best choice #simonmeme #simonkaggwanjala #nala"
+                                       },
+                                       {
+                                           "name":  "Post Batch 4",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg",
+                                                         "3.jpg",
+                                                         "4.jpg"
+                                                     ],
+                                           "description":  "Why are you being dumb? NALA is the only choice 💕 #simonmeme #westernunion #nala"
+                                       },
+                                       {
+                                           "name":  "Post Batch 5",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg"
+                                                     ],
+                                           "description":  "the math doesn’t lie. #moneytransfer #digitalpayments #nala"
+                                       },
+                                       {
+                                           "name":  "Post Batch 6",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg",
+                                                         "3.jpg"
+                                                     ],
+                                           "description":  "he doesn’t have to be rich… just consistent 💅 NALA makes it possible 🇨🇲🇨🇲🇨🇲 #moneytransfer #internationallove #nala"
+                                       },
+                                       {
+                                           "name":  "Post Batch 7",
+                                           "files":  [
+                                                         "1.jpg",
+                                                         "2.jpg"
+                                                     ],
+                                           "description":  "used to avoid my finances\r\nNow I track and transfer EASY 😌\r\nNALA app = game changer ✨ #africalove #africa #nala"
+                                       }
+                                   ]
+                   }
+               ]
 }

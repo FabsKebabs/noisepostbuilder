@@ -120,8 +120,8 @@ async function nextBatch(brandName, btn) {
     toast('✨ Generated!', 'gr');
 }
 
-/* ── DOWNLOAD (zip files from Brands/ folder via fetch) ── */
-async function downloadBatch(brandName, btn) {
+/* ── GALLERY OVERLAY ── */
+function openGallery(brandName) {
     const data = load();
     const entry = data[brandName];
     if (!entry) return;
@@ -129,43 +129,55 @@ async function downloadBatch(brandName, btn) {
     if (!batch) { toast('No batch found', 'rd'); return; }
 
     const files = batch.files || [];
-    if (files.length === 0) { toast('This batch has no files yet.', 'rd'); return; }
+    if (files.length === 0) { toast('This batch has no images yet.', 'rd'); return; }
 
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const basePath = `Brands/${encodeURIComponent(brandName)}/${encodeURIComponent(batch.name)}/`;
+
+    const ov = document.getElementById('gallery-ov');
+    const grid = document.getElementById('gallery-grid');
+    const hint = document.getElementById('gallery-hint');
+
+    hint.textContent = isMobile
+        ? '👆 Long-press each photo → Save to Photos'
+        : '💾 Click the download button under each photo';
+
+    grid.innerHTML = files.map((f, i) => {
+        const src = basePath + encodeURIComponent(f);
+        return `<div class="gal-item">
+  <img src="${src}" alt="${esc(f)}" loading="lazy" />
+  ${!isMobile ? `<button class="btn btn-red btn-sm gal-dl" onclick="dlSingle('${esc(src)}','${esc(f)}',this)">⬇ Save</button>` : ''}
+</div>`;
+    }).join('');
+
+    ov.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeGallery() {
+    document.getElementById('gallery-ov').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+async function dlSingle(src, fileName, btn) {
     const orig = btn.innerHTML;
-    btn.innerHTML = '<span class="spin"></span> Zipping…';
+    btn.innerHTML = '<span class="spin"></span>';
     btn.disabled = true;
-
     try {
-        const zip = new JSZip();
-        const basePath = `Brands/${brandName}/${batch.name}/`;
-
-        await Promise.all(files.map(async fileName => {
-            const url = basePath + encodeURIComponent(fileName);
-            const resp = await fetch(url);
-            if (!resp.ok) throw new Error(`Could not fetch ${fileName}`);
-            const blob = await resp.blob();
-            zip.file(fileName, blob);
-        }));
-
-        const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
-        const url = URL.createObjectURL(zipBlob);
+        const resp = await fetch(src);
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `${brandName} – ${batch.name}.zip`;
+        a.href = url; a.download = fileName;
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-
-        toast(`📥 Downloading ${files.length} file${files.length !== 1 ? 's' : ''}…`, 'gr');
-        btn.innerHTML = 'Downloading…';
-        setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 4000);
-    } catch (e) {
-        toast('Error: ' + e.message, 'rd');
-        btn.innerHTML = orig;
-        btn.disabled = false;
-    }
+        setTimeout(() => URL.revokeObjectURL(url), 3000);
+        toast('📥 Saved!', 'gr');
+    } catch (e) { toast('Error: ' + e.message, 'rd'); }
+    btn.innerHTML = orig;
+    btn.disabled = false;
 }
 
 /* ── RENDER: MY POSTS ── */
@@ -188,6 +200,7 @@ function rPosts() {
         const idx = d.postIdx || 0;
         const total = batches.length;
         const batch = total > 0 ? batches[idx] : null;
+        const fileCount = batch ? (batch.files || []).length : 0;
         const init = ini(b.name);
 
         return `<div class="pc anim">
@@ -204,10 +217,10 @@ function rPosts() {
              <div class="ready-dot"></div>
              <div>
                <div class="ready-title">Ready to post</div>
-               <div class="ready-sub">Your content has been generated</div>
+               <div class="ready-sub">${fileCount} photo${fileCount !== 1 ? 's' : ''} ready</div>
              </div>
            </div>
-           <button class="btn btn-red btn-sm" onclick="downloadBatch('${esc(b.key)}',this)">⬇ Download</button>
+           <button class="btn btn-red btn-sm" onclick="openGallery('${esc(b.key)}')">🖼 View Photos</button>
          </div>`
                 : `<div class="bi-box"><div class="bt" style="color:var(--mu);text-align:center">⚠️ No batches found.</div></div>`}
     <div class="pc-act">
@@ -285,7 +298,7 @@ function sw(name) {
     if (name === 'brands' && allBrands.length === 0) loadBrands();
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCon(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeCon(); closeGallery(); } });
 
 /* ── BOOT ── */
 (async function () {

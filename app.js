@@ -177,6 +177,48 @@ async function dlSingle(src, fileName, btn) {
     btn.disabled = false;
 }
 
+/* ── DOWNLOAD BATCH AS ZIP ── */
+async function downloadBatch(brandName, btn) {
+    const data = load();
+    const entry = data[brandName];
+    if (!entry) return;
+    const batch = (entry.batches || [])[entry.postIdx || 0];
+    if (!batch) { toast('No batch found', 'rd'); return; }
+    const files = batch.files || [];
+    if (files.length === 0) { toast('No images in this batch.', 'rd'); return; }
+
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="spin"></span> Zipping…';
+    btn.disabled = true;
+
+    try {
+        const zip = new JSZip();
+        const basePath = `Brands/${encodeURIComponent(brandName)}/${encodeURIComponent(batch.name)}/`;
+        await Promise.all(files.map(async f => {
+            const r = await fetch(basePath + encodeURIComponent(f));
+            if (!r.ok) throw new Error('Could not fetch ' + f);
+            zip.file(f, await r.blob());
+        }));
+        const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${brandName} – ${batch.name}.zip`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 8000);
+        toast(`📥 Downloading ${files.length} photos…`, 'gr');
+        btn.innerHTML = 'Done!';
+        setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 3000);
+    } catch (e) {
+        toast('Error: ' + e.message, 'rd');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
 /* ── RENDER: MY POSTS ── */
 function rPosts() {
     const data = load();
@@ -218,12 +260,15 @@ function rPosts() {
                <div class="ready-sub">${fileCount} photo${fileCount !== 1 ? 's' : ''} ready</div>
              </div>
            </div>
-           <button class="btn btn-red btn-sm" onclick="openGallery('${esc(b.key)}')">🖼 View Photos</button>
+           <div style="display:flex;gap:6px;flex-wrap:wrap">
+             <button class="btn btn-red btn-sm" onclick="openGallery('${esc(b.key)}')">🖼 View</button>
+             <button class="btn btn-red btn-sm" onclick="downloadBatch('${esc(b.key)}',this)">⬇ Download</button>
+           </div>
          </div>
          ${desc ? `<div class="desc-box">
            <div class="desc-label">📋 Caption</div>
            <div class="desc-text">${esc(desc)}</div>
-           <button class="btn btn-ic btn-sm desc-copy" onclick="copyDesc(this,'${esc(desc)}')">Copy</button>
+           <button class="btn btn-ic btn-sm desc-copy" onclick="copyDesc(this,'${esc(desc)}')">📋 Copy</button>
          </div>` : ''}`
                 : `<div class="bi-box"><div class="bt" style="color:var(--mu);text-align:center">⚠️ No batches found.</div></div>`}
     <div class="pc-act">

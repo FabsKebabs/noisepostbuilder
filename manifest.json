@@ -1,0 +1,22 @@
+{
+    "name": "noise PostBuilder",
+    "short_name": "PostBuilder",
+    "description": "noise influencer post builder",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#0a0a0a",
+    "theme_color": "#0a0a0a",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "favicon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "favicon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
